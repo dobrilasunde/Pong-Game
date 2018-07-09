@@ -28,6 +28,7 @@ private:
 	Vector2 mPaddle2Pos;
 	Vector2 mBallPos;
 	Uint32 mTicksCount;
-	int mPaddleDir;
+	int mPaddle1Dir;
+	int mPaddle2Dir;
 	Vector2 mBallVel;
 };

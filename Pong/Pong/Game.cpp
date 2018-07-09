@@ -3,7 +3,7 @@
 const int thickness = 15;
 const float paddleH = 100.0f;
 
-Game::Game(): mWindow(nullptr), mRenderer(nullptr), mTicksCount(0), mIsRunning(true), mPaddleDir(0) {}
+Game::Game(): mWindow(nullptr), mRenderer(nullptr), mTicksCount(0), mIsRunning(true), mPaddle1Dir(0), mPaddle2Dir(0) {}
 
 bool Game::Initialize()
 {
@@ -75,14 +75,24 @@ void Game::ProcessInput()
 		mIsRunning = false;
 	}
 
-	mPaddleDir = 0;
+	mPaddle1Dir = 0;
 	if (state[SDL_SCANCODE_W])
 	{
-		mPaddleDir -= 1;
+		mPaddle1Dir -= 1;
 	}
 	if (state[SDL_SCANCODE_S])
 	{
-		mPaddleDir += 1;
+		mPaddle1Dir += 1;
+	}
+
+	mPaddle2Dir = 0;
+	if (state[SDL_SCANCODE_I])
+	{
+		mPaddle2Dir -= 1;
+	}
+	if (state[SDL_SCANCODE_K])
+	{
+		mPaddle2Dir += 1;
 	}
 }
 
@@ -101,9 +111,9 @@ void Game::UpdateGame()
 
 	mTicksCount = SDL_GetTicks();
 
-	if (mPaddleDir != 0)
+	if (mPaddle1Dir != 0)
 	{
-		mPaddle1Pos.y += mPaddleDir * 300.0f * deltaTime;
+		mPaddle1Pos.y += mPaddle1Dir * 300.0f * deltaTime;
 		// Make sure paddle doesn't move off screen!
 		if (mPaddle1Pos.y < (paddleH / 2.0f + thickness))
 		{
@@ -115,25 +125,41 @@ void Game::UpdateGame()
 		}
 	}
 
+	if (mPaddle2Dir != 0)
+	{
+		mPaddle2Pos.y += mPaddle2Dir * 300.0f * deltaTime;
+		// Make sure paddle doesn't move off screen!
+		if (mPaddle2Pos.y < (paddleH / 2.0f + thickness))
+		{
+			mPaddle2Pos.y = paddleH / 2.0f + thickness;
+		}
+		else if (mPaddle2Pos.y >(768.0f - paddleH / 2.0f - thickness))
+		{
+			mPaddle2Pos.y = 768.0f - paddleH / 2.0f - thickness;
+		}
+	}
+
 	mBallPos.x += mBallVel.x * deltaTime;
 	mBallPos.y += mBallVel.y * deltaTime;
 
-	float diff = mPaddle1Pos.y - mBallPos.y;
-	diff = (diff > 0.0f) ? diff : -diff;
+	float diff1 = mPaddle1Pos.y - mBallPos.y;
+	float diff2 = mPaddle2Pos.y - mBallPos.y;
 
-	if (diff <= paddleH / 2.0f && mBallPos.x <= 25.0f && mBallPos.x >= 20.0f &&	mBallVel.x < 0.0f)
+	diff1 = (diff1 > 0.0f) ? diff1 : -diff1;
+	diff2 = (diff2 > 0.0f) ? diff2 : -diff2;
+
+	if (diff1 <= paddleH / 2.0f && mBallPos.x <= 25.0f && mBallPos.x >= 20.0f && mBallVel.x < 0.0f)
+	{
+		mBallVel.x *= -1.0f;
+	}
+	if (diff2 <= paddleH / 2.0f && mBallPos.x >= 1000.0f && mBallPos.x <= 1005.0f && mBallVel.x > 0.0f)
 	{
 		mBallVel.x *= -1.0f;
 	}
 	//off screen?
-	else if (mBallPos.x <= 0.0f)
+	else if (mBallPos.x <= 0.0f || mBallPos.x >= 1024.0f)
 	{
 		mIsRunning = false;
-	}
-	//ball collided with the right wall
-	else if (mBallPos.x >= (1024.0f - thickness) && mBallVel.x > 0.0f)
-	{
-		mBallVel.x *= -1.0f;
 	}
 	//ball collided with the top wall
 	if (mBallPos.y <= thickness && mBallVel.y < 0.0f)
