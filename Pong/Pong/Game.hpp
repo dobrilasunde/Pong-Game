@@ -1,11 +1,18 @@
 #pragma once
 
 #include<SDL.h>
+#include<vector>
 
 struct Vector2
 {
 	float x;
 	float y;
+};
+
+struct Ball
+{
+	Vector2 mPosition;
+	Vector2 mVelocity;
 };
 
 class Game
@@ -26,9 +33,8 @@ private:
 	SDL_Renderer* mRenderer;
 	Vector2 mPaddle1Pos;
 	Vector2 mPaddle2Pos;
-	Vector2 mBallPos;
 	Uint32 mTicksCount;
 	int mPaddle1Dir;
 	int mPaddle2Dir;
-	Vector2 mBallVel;
+	std::vector<Ball> mBalls;
 };

@@ -1,12 +1,16 @@
 #include"Game.hpp"
-
+#include<time.h>
 const int thickness = 15;
 const float paddleH = 100.0f;
+const float numberOfBalls = 3;
+int randomSign = 1;
 
 Game::Game(): mWindow(nullptr), mRenderer(nullptr), mTicksCount(0), mIsRunning(true), mPaddle1Dir(0), mPaddle2Dir(0) {}
 
 bool Game::Initialize()
 {
+	srand(time(NULL));
+
 	int sdlResult = SDL_Init(SDL_INIT_VIDEO);
 	if (sdlResult != 0)
 	{
@@ -32,10 +36,23 @@ bool Game::Initialize()
 	mPaddle1Pos.y = 768.0f / 2.0f;
 	mPaddle2Pos.x = 1024.0f - thickness - 10.0f;
 	mPaddle2Pos.y = 768.0f / 2.0f;
-	mBallPos.x = 1024.0f / 2.0f;
-	mBallPos.y = 768.0f / 2.0f;
-	mBallVel.x = -200.0f;
-	mBallVel.y = 235.0f;
+
+	for (int i = 0; i < numberOfBalls; ++i)
+	{
+		int posx = rand() % 900 + 100;
+		int posy = rand() % 670 + 100;
+		int velx = -150 * randomSign;
+		randomSign *= (-1);
+		int vely = 200 * randomSign;
+		randomSign *= (-1);
+
+		Ball newBall;
+		newBall.mPosition.x = posx;
+		newBall.mPosition.y = posy;
+		newBall.mVelocity.x = velx;
+		newBall.mVelocity.y = vely;
+		mBalls.push_back(newBall);
+	}
 	return true;
 }
 
@@ -139,39 +156,43 @@ void Game::UpdateGame()
 		}
 	}
 
-	mBallPos.x += mBallVel.x * deltaTime;
-	mBallPos.y += mBallVel.y * deltaTime;
+	for (int i = 0; i < mBalls.size(); ++i)
+	{
+		mBalls[i].mPosition.x += mBalls[i].mVelocity.x * deltaTime;
+		mBalls[i].mPosition.y += mBalls[i].mVelocity.y * deltaTime;
 
-	float diff1 = mPaddle1Pos.y - mBallPos.y;
-	float diff2 = mPaddle2Pos.y - mBallPos.y;
+		float diff1 = mPaddle1Pos.y - mBalls[i].mPosition.y;
+		float diff2 = mPaddle2Pos.y - mBalls[i].mPosition.y;
 
-	diff1 = (diff1 > 0.0f) ? diff1 : -diff1;
-	diff2 = (diff2 > 0.0f) ? diff2 : -diff2;
+		diff1 = (diff1 > 0.0f) ? diff1 : -diff1;
+		diff2 = (diff2 > 0.0f) ? diff2 : -diff2;
 
-	if (diff1 <= paddleH / 2.0f && mBallPos.x <= 25.0f && mBallPos.x >= 20.0f && mBallVel.x < 0.0f)
-	{
-		mBallVel.x *= -1.0f;
+		if (diff1 <= paddleH / 2.0f && mBalls[i].mPosition.x <= 25.0f && mBalls[i].mPosition.x >= 20.0f && mBalls[i].mVelocity.x < 0.0f)
+		{
+			mBalls[i].mVelocity.x *= -1.0f;
+		}
+		if (diff2 <= paddleH / 2.0f && mBalls[i].mPosition.x >= 1000.0f && mBalls[i].mPosition.x <= 1005.0f && mBalls[i].mVelocity.x > 0.0f)
+		{
+			mBalls[i].mVelocity.x *= -1.0f;
+		}
+		//off screen?
+		else if (mBalls[i].mPosition.x <= 0.0f || mBalls[i].mPosition.x >= 1024.0f)
+		{
+			mIsRunning = false;
+		}
+		//ball collided with the top wall
+		if (mBalls[i].mPosition.y <= thickness && mBalls[i].mVelocity.y < 0.0f)
+		{
+			mBalls[i].mVelocity.y *= -1;
+		}
+		//ball collided with the bottom wall?
+		else if (mBalls[i].mPosition.y >= (768 - thickness) &&
+			mBalls[i].mVelocity.y > 0.0f)
+		{
+			mBalls[i].mVelocity.y *= -1;
+		}
 	}
-	if (diff2 <= paddleH / 2.0f && mBallPos.x >= 1000.0f && mBallPos.x <= 1005.0f && mBallVel.x > 0.0f)
-	{
-		mBallVel.x *= -1.0f;
-	}
-	//off screen?
-	else if (mBallPos.x <= 0.0f || mBallPos.x >= 1024.0f)
-	{
-		mIsRunning = false;
-	}
-	//ball collided with the top wall
-	if (mBallPos.y <= thickness && mBallVel.y < 0.0f)
-	{
-		mBallVel.y *= -1;
-	}
-	//ball collided with the bottom wall?
-	else if (mBallPos.y >= (768 - thickness) &&
-		mBallVel.y > 0.0f)
-	{
-		mBallVel.y *= -1;
-	}
+	
 
 }
 
@@ -197,13 +218,17 @@ void Game::GenerateOutput()
 
 	SDL_SetRenderDrawColor(mRenderer, 243, 230, 229, 255);
 	//ball
-	SDL_Rect ball{
-		static_cast<int>(mBallPos.x - thickness / 2),
-		static_cast<int>(mBallPos.y - thickness / 2),
-		thickness,
-		thickness
-	};
-	SDL_RenderFillRect(mRenderer, &ball);
+	for (int i = 0; i < mBalls.size(); ++i)
+	{
+		SDL_Rect ball{
+			static_cast<int>(mBalls[i].mPosition.x - thickness / 2),
+			static_cast<int>(mBalls[i].mPosition.y - thickness / 2),
+			thickness,
+			thickness
+		};
+		SDL_RenderFillRect(mRenderer, &ball);
+	}
+
 
 	SDL_SetRenderDrawColor(mRenderer, 143, 203, 155, 255);
 	//paddle1
